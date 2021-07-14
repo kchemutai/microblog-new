@@ -1,6 +1,6 @@
 import os
 import secrets
-from flask import render_template, url_for, redirect, flash, request
+from flask import render_template, url_for, redirect, flash, request, abort
 from wtforms.validators import Email
 from microblog.forms import LoginForm, PostForm, RegistrationForm, UpdateAccountForm
 from microblog.models import User, Post
@@ -110,7 +110,7 @@ def account():
     return render_template('account.html', title='Account', image_file=image_file, form=form)
 
 
-@app.route('/post/new', methods=['POSt', 'GET'])
+@app.route('/post/new', methods=['POST', 'GET'])
 @login_required
 def post():
     form = PostForm()
@@ -119,6 +119,48 @@ def post():
                     content=form.content.data, author=current_user)
         db.session.add(post)
         db.session.commit()
-        flash('Your post has successfully been submitted')
+        flash('Your post has successfully been submitted', 'success')
         return redirect(url_for('home'))
-    return render_template('new_post.html', title='New Post', form=form)
+    return render_template('new_post.html', title='New Post', form=form, legend='Create Post')
+
+
+@app.route('/post/<int:post_id>', methods=['post', 'get'])
+def view_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title=post.title, post=post)
+
+
+@app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
+@login_required
+def update_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if current_user != post.author:
+        abort(403)
+
+    form = PostForm()
+    if form.validate_on_submit():
+
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('Your post has been updated', 'success')
+        return redirect(url_for('view_post', post_id=post.id))
+
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+
+    return render_template('new_post.html', title='Update Post', legend='Update Post', form=form)
+
+
+@app.route('/post/<int:post_id>/delete', methods=['GET', 'POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if current_user != post.author:
+        abort(403)
+
+    db.session.delete(post)
+    db.session.commit()
+    flash('Your post has been deleted', 'success')
+    return redirect(url_for('home'))
