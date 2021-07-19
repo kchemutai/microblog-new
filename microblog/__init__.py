@@ -27,8 +27,12 @@ def create_app(config_class=Config):
     from microblog.main.routes import main_bp
     from microblog.users.routes import users_bp
     from microblog.posts.routes import posts_bp
+    from microblog.errors.handlers import errors_bp
+    
     app.register_blueprint(users_bp)
     app.register_blueprint(posts_bp)
     app.register_blueprint(main_bp)
+    app.register_blueprint(errors_bp)
+
 
     return app
