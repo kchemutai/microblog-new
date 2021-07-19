@@ -1,31 +1,34 @@
-import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from flask_mail import Mail
-
-app = Flask(__name__)
-
-app.config['SECRET_KEY'] = '4fcb6ded09f29ed1452e6c53c059816a'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-
-app.config['MAIL_SERVER']=os.environ.get('MAIL_SERVER')
-app.config['MAIL_PORT']=os.environ.get('MAIL_PORT')
-app.config['MAIL_USE_TLS']=os.environ.get('MAIL_USE_TLS')
-app.config['MAIL_USERNAME']=os.environ.get('MAIL_USERNAME')
-app.config['MAIL_PASSWORD']=os.environ.get('MAIL_PASSWORD')
+from microblog.config import Config
 
 
-
-mail=Mail(app)
-
-
-db = SQLAlchemy(app)
-bicrypt = Bcrypt(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
+mail = Mail()
+db = SQLAlchemy()
+bicrypt = Bcrypt()
+login_manager = LoginManager()
+login_manager.login_view = 'users_bp.login'
 login_manager.login_message_category = 'info'
 
 
-from microblog import routes
+def create_app(config_class=Config):
+
+    app = Flask(__name__)
+    app.config.from_object(Config)
+    mail.init_app(app)
+    db.init_app(app)
+    bicrypt.init_app(app)
+    login_manager.init_app(app)
+
+    from microblog.main.routes import main_bp
+    from microblog.users.routes import users_bp
+    from microblog.posts.routes import posts_bp
+    app.register_blueprint(users_bp)
+    app.register_blueprint(posts_bp)
+    app.register_blueprint(main_bp)
+
+    return app

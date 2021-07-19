@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Required, ValidationError
 from microblog.models import User
 from flask_login import current_user
@@ -41,14 +41,14 @@ class UpdateAccountForm(FlaskForm):
         if email.data != current_user.email:
             email = User.query.filter_by(email=email.data).first()
             if email:
-                raise ValueError(
+                raise ValidationError(
                     'That email is already taken, please choose another')
 
     def validate_username(self, username):
         if username.data != current_user.username:
             username = User.query.filter_by(username=username.data).first()
             if username:
-                raise ValueError(
+                raise ValidationError(
                     'That username is already taken, please choose another')
 
 
@@ -59,12 +59,6 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-class PostForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired()])
-    content = TextAreaField('Content', validators=[DataRequired()])
-    submit = SubmitField('Post')
-
-
 class PasswordResetRequestForm(FlaskForm):
 
     email = StringField('Reset Email', validators=[DataRequired(), Email()])
@@ -73,7 +67,7 @@ class PasswordResetRequestForm(FlaskForm):
     def validate_email(self, email):
         email = User.query.filter_by(email=email.data).first()
         if not email:
-            raise ValueError(
+            raise ValidationError(
                 'That email is not Valid, Please use a valid email')
 
 
